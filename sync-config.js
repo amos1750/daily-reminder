@@ -1,7 +1,7 @@
 // 云端同步配置 —— 填入你的 GitHub Token 和 Gist ID 即可启用跨设备同步
 const SYNC_CONFIG = {
-  token: '',       // 你的 GitHub Personal Access Token（只需 gist 权限）
-  gistId: ''       // 你的 Gist ID
+  token: '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',       // 你的 GitHub Personal Access Token（只需 gist 权限）
+  gistId: 'https://gist.github.com/amos1750/326a2d1464bb32e7ad68a2b2e9e07546'       // 你的 Gist ID
 };
 
 // 保存数据到云端

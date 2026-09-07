@@ -130,8 +130,12 @@ header .date{font-size:0.85em;color:var(--muted)}
 </div>
 </div>
 
+  if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/daily-reminder/sw.js')
+    .catch(() => {});
+}
 <script src="sync-config.js"></script>
-<script>
+  <script>
 // ===== 日期与日历 =====
 let viewYear, viewMonth, selectedDate = null;
 const today = new Date();

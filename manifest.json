@@ -1,11 +1,13 @@
 {
- "name": "每日科研提醒器",
+  "name": "每日科研提醒器",
   "short_name": "科研提醒",
-  "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#0f172a",
+  "description": "每日科研进度与实验记录提醒器",
   "start_url": "/daily-reminder/",
   "scope": "/daily-reminder/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
   "icons": [
     {
       "src": "/daily-reminder/icon-192.png",

@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>每日科研提醒器</title>
-<link rel="manifest" href="/daily-reminder/manifest.json">
 <style>
 :root {
   --bg1: #0f172a; --bg2: #1e293b; --gold: #fbbf24; --red: #ef4444;
@@ -17,7 +16,6 @@ body {
   color: var(--text); min-height:100vh; padding:12px;
   transition: background 0.8s ease;
 }
-/* 天气背景叠加 */
 body::before {
   content: ''; position:fixed; top:0; left:0; width:100%; height:100%;
   background: inherit; z-index:-1;
@@ -34,7 +32,7 @@ body::before {
 /* 头部 */
 .header { text-align:center; margin-bottom:10px; }
 .header h1 { font-size:20px; color:var(--gold); margin-bottom:4px; }
-.motivation { font-size:13px; color:var(--muted; font-style:italic; }
+.motivation { font-size:13px; color:var(--muted); font-style:italic; }
 
 /* 日历 */
 .calendar { max-width:420px; margin:0 auto 12px; }
@@ -73,7 +71,6 @@ body::before {
 .cal-day.future-planned::before {
   content:'📌'; position:absolute; top:1px; right:2px; font-size:8px;
 }
-
 .day-num { font-size:13px; font-weight:500; z-index:1; }
 .day-tasks-preview {
   width:100%; padding:0 2px; margin-top:1px;
@@ -86,11 +83,13 @@ body::before {
 }
 
 /* 当日编辑区 */
-.day-editor {
+.day-editor, .notes-section, .reminders, .night-review {
   max-width:420px; margin:0 auto 12px;
   background:rgba(255,255,255,0.05); border-radius:12px; padding:14px;
 }
-.day-editor h3 { color:var(--gold); margin-bottom:10px; font-size:15px; }
+.day-editor h3, .notes-section h3, .reminders h3, .night-review h3 {
+  color:var(--gold); margin-bottom:10px; font-size:15px;
+}
 .todo-input-row { display:flex; gap:6px; margin-bottom:8px; }
 .todo-input-row input {
   flex:1; padding:6px 10px; border-radius:6px; border:none;
@@ -112,11 +111,33 @@ body::before {
   cursor:pointer; font-size:14px;
 }
 
+/* 灵感速记 */
+.notes-input-row { display:flex; gap:6px; margin-bottom:8px; }
+.notes-input-row textarea {
+  flex:1; padding:6px 10px; border-radius:6px; border:none;
+  background:rgba(255,255,255,0.1); color:white; font-size:13px;
+  resize:vertical; min-height:32px; font-family:inherit;
+}
+.notes-input-row button {
+  padding:6px 12px; background:var(--green); border:none; border-radius:6px;
+  cursor:pointer; font-weight:bold; font-size:13px; color:white; white-space:nowrap;
+}
+.notes-list { list-style:none; }
+.notes-list li {
+  padding:6px 8px; margin-bottom:6px; background:rgba(255,255,255,0.04);
+  border-radius:6px; font-size:12px; line-height:1.5;
+  border-left:3px solid var(--green);
+  position:relative;
+}
+.notes-list li .note-time { color:var(--muted); font-size:10px; margin-bottom:2px; }
+.notes-list li .del-note {
+  position:absolute; top:4px; right:6px; background:none; border:none;
+  color:var(--red); cursor:pointer; font-size:12px;
+}
+
 /* 提醒区 */
-.reminders { max-width:420px; margin:0 auto; }
-.reminders h3 { color:var(--gold); margin-bottom:8px; font-size:15px; }
 .reminder-item {
-  background:rgba(255,255,255,0.05); border-radius:8px; padding:10px;
+  background:rgba(255,255,255,0.03); border-radius:8px; padding:10px;
   margin-bottom:8px;
 }
 .reminder-item label { font-size:13px; font-weight:500; display:block; margin-bottom:4px; }
@@ -125,6 +146,17 @@ body::before {
   background:rgba(255,255,255,0.1); color:white; font-size:13px;
   resize:vertical;
 }
+.reminder-item .hint { font-size:11px; color:var(--muted); margin-top:2px; }
+
+/* 每晚三问 */
+.night-review { border:1px solid rgba(251,191,36,0.2); }
+.night-q { margin-bottom:10px; }
+.night-q label { font-size:13px; font-weight:500; display:block; margin-bottom:4px; color:var(--gold); }
+.night-q textarea {
+  width:100%; padding:6px; border-radius:6px; border:none;
+  background:rgba(255,255,255,0.1); color:white; font-size:13px;
+  resize:vertical; min-height:50px;
+}
 
 /* 导出 */
 .export-row { max-width:420px; margin:12px auto; display:flex; gap:8px; flex-wrap:wrap; }
@@ -132,6 +164,7 @@ body::before {
   flex:1; padding:8px; border:none; border-radius:6px; cursor:pointer;
   background:var(--blue); color:white; font-size:12px; min-width:80px;
 }
+.export-row .clear-btn { background:rgba(239,68,68,0.6); }
 
 /* 同步状态 */
 .sync-status { max-width:420px; margin:8px auto; text-align:center; font-size:11px; color:var(--muted); }
@@ -167,19 +200,45 @@ body::before {
   <ul class="todo-list" id="todoList"></ul>
 </div>
 
+<div class="notes-section">
+  <h3>💡 灵感速记</h3>
+  <div class="notes-input-row">
+    <textarea id="noteInput" rows="1" placeholder="随时记录你的思绪，回车保存（Shift+Enter换行）"></textarea>
+    <button onclick="addNote()">保存</button>
+  </div>
+  <ul class="notes-list" id="notesList"></ul>
+</div>
+
 <div class="reminders">
   <h3>📋 日常提醒</h3>
   <div class="reminder-item">
     <label>① 核心进度</label>
-    <textarea id="core" rows="2" placeholder="今天的核心研究进度..."></textarea>
+    <textarea id="core" rows="2" placeholder="今天最关键的科研推进是什么？"></textarea>
+    <div class="hint">💡 聚焦1件最重要的事，不要贪多</div>
   </div>
   <div class="reminder-item">
     <label>② 实验三问</label>
-    <textarea id="exp" rows="2" placeholder="1.做了什么？2.发现什么？3.下一步？"></textarea>
+    <textarea id="exp" rows="2" placeholder="做了什么？ → 发现了什么？ → 下一步？"></textarea>
+    <div class="hint">💡 用一句话回答每个问题即可</div>
   </div>
   <div class="reminder-item">
     <label>③ 30分钟有氧运动</label>
-    <input type="text" id="sport" placeholder="今天运动了什么？">
+    <input type="text" id="sport" placeholder="今天运动了什么？（身体是科研的续航底气）">
+  </div>
+  <div class="reminder-item">
+    <label>④ 文献阅读</label>
+    <textarea id="reading" rows="2" placeholder="今天读了什么？核心观点/方法是什么？"></textarea>
+    <div class="hint">💡 每天精读1篇高质量文献，胜过泛读10篇</div>
+  </div>
+  <div class="reminder-item">
+    <label>⑤ 待解问题</label>
+    <textarea id="questions" rows="2" placeholder="当前卡住的问题？需要请教谁？"></textarea>
+    <div class="hint">💡 不超过2个，优先解决最影响进度的</div>
+  </div>
+  <div class="reminder-item">
+    <label>⑥ 明日优先级</label>
+    <textarea id="tomorrow" rows="2" placeholder="明天最重要的1-3件事？"></textarea>
+    <div class="hint">💡 具体到时间段，最小可执行的一步</div>
   </div>
 </div>
 
@@ -187,6 +246,23 @@ body::before {
   <button onclick="exportWeek()">📊 导出本周</button>
   <button onclick="exportMonth()">📊 导出本月</button>
   <button onclick="window.print()">🖨️ 打印PDF</button>
+  <button class="clear-btn" onclick="clearAllData()">🗑️ 清空数据</button>
+</div>
+
+<div class="night-review">
+  <h3>🧠 每晚三问（日终复盘）</h3>
+  <div class="night-q">
+    <label>1️⃣ 今天最大的收获是什么？</label>
+    <textarea id="review1" rows="2" placeholder="一个数据、一个想法、一次讨论都算"></textarea>
+  </div>
+  <div class="night-q">
+    <label>2️⃣ 今天浪费了什么时间？明天如何避免？</label>
+    <textarea id="review2" rows="2" placeholder="刷手机？无效会议？方向迷茫？"></textarea>
+  </div>
+  <div class="night-q">
+    <label>3️⃣ 明天最小的一步是什么？</label>
+    <textarea id="review3" rows="2" placeholder="具体到：明早9点，打开XX文件，做XX"></textarea>
+  </div>
 </div>
 
 <div class="sync-status" id="syncStatus"></div>
@@ -202,11 +278,42 @@ function dateKey(d) {
 }
 
 function getDayData(key) {
-  return JSON.parse(localStorage.getItem('dr_' + key) || '{"todos":[]}');
+  const raw = localStorage.getItem('dr_' + key);
+  if (!raw) return { todos:[], notes:[], core:'', exp:'', sport:'', reading:'', questions:'', tomorrow:'', review1:'', review2:'', review3:'' };
+  try {
+    const parsed = JSON.parse(raw);
+    return {
+      todos: parsed.todos || [],
+      notes: parsed.notes || [],
+      core: parsed.core || '',
+      exp: parsed.exp || '',
+      sport: parsed.sport || '',
+      reading: parsed.reading || '',
+      questions: parsed.questions || '',
+      tomorrow: parsed.tomorrow || '',
+      review1: parsed.review1 || '',
+      review2: parsed.review2 || '',
+      review3: parsed.review3 || ''
+    };
+  } catch(e) { return { todos:[], notes:[], core:'', exp:'', sport:'', reading:'', questions:'', tomorrow:'', review1:'', review2:'', review3:'' }; }
 }
+
 function saveDayData(key, data) {
   localStorage.setItem('dr_' + key, JSON.stringify(data));
-  renderCalendar(); // 数据变化后刷新日历预览
+  renderCalendar();
+  showSyncStatus();
+}
+
+function showSyncStatus() {
+  $('syncStatus').textContent = `✓ 已自动保存 ${new Date().toLocaleTimeString('zh-CN')}`;
+  setTimeout(() => { $('syncStatus').textContent = ''; }, 2000);
+}
+
+// ========== XSS防护 ==========
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }
 
 // ========== 激励语 ==========
@@ -216,6 +323,8 @@ const motivations = [
   "实验失败也是数据，坚持下去。",
   "专注当下，未来自会清晰。",
   "科研是一场马拉松，保持节奏。",
+  "好记性不如烂笔头，今天的记录就是明天的灵感。",
+  "不要等灵感，去创造灵感。",
 ];
 $('motivation').textContent = motivations[Math.floor(Math.random()*motivations.length)];
 
@@ -238,16 +347,18 @@ function renderCalendar() {
     const isToday = key === today;
     const isPast = new Date(y,m,d) < new Date(new Date().setHours(0,0,0,0));
     const isSelected = key === selectedDate;
-    const hasData = data.todos.length > 0 || data.core;
+    const hasData = data.todos.length > 0 || data.core || data.notes.length > 0;
     const isFuturePlanned = !isPast && !isToday && hasData;
 
     let previewHtml = '';
     if (data.todos.length > 0) {
       const show = data.todos.slice(0,2);
-      previewHtml = show.map(t => `<div class="task-line">${t.done?'✓':'·'} ${t.text}</div>`).join('');
+      previewHtml = show.map(t => `<div class="task-line">${t.done?'✓':'·'} ${escapeHtml(t.text)}</div>`).join('');
       if (data.todos.length > 2) previewHtml += `<div class="task-line" style="opacity:.5">…共${data.todos.length}条</div>`;
+    } else if (data.notes.length > 0) {
+      previewHtml = `<div class="task-line">💡 ${escapeHtml(data.notes[0].text.substring(0,8))}${data.notes[0].text.length>8?'…':''}</div>`;
     } else if (data.core) {
-      previewHtml = `<div class="task-line">📌 ${data.core.substring(0,8)}${data.core.length>8?'…':''}</div>`;
+      previewHtml = `<div class="task-line">📌 ${escapeHtml(data.core.substring(0,8))}${data.core.length>8?'…':''}</div>`;
     }
 
     html += `<div class="cal-day${isPast?' past':''}${isToday?' today':''}${isSelected?' selected':''}${hasData?' has-data':''}${isFuturePlanned?' future-planned':''}"
@@ -266,6 +377,8 @@ function selectDate(key) {
   selectedDate = key;
   renderCalendar();
   renderEditor();
+  renderNotes();
+  loadAllFields();
 }
 
 // ========== 当日编辑区 ==========
@@ -275,7 +388,7 @@ function renderEditor() {
   $('todoList').innerHTML = data.todos.map((t,i) =>
     `<li class="${t.done?'done':''}">
       <input type="checkbox" ${t.done?'checked':''} onchange="toggleTodo(${i})">
-      <span>${t.text}</span>
+      <span>${escapeHtml(t.text)}</span>
       <button class="del-btn" onclick="delTodo(${i})">×</button>
     </li>`
   ).join('');
@@ -288,7 +401,7 @@ function addTodo() {
   data.todos.push({text:input.value.trim(), done:false});
   saveDayData(selectedDate, data);
   input.value = '';
-  if(selectedDate===dateKey(new Date())) renderEditor();
+  renderEditor();
 }
 
 $('todoInput').addEventListener('keydown', e => { if(e.key==='Enter') addTodo(); });
@@ -306,31 +419,61 @@ function delTodo(i) {
   renderEditor();
 }
 
-// ========== 日常提醒自动保存 ==========
-['core','exp','sport'].forEach(id => {
-  $(id).addEventListener('input', () => {
-    const data = getDayData(selectedDate);
-    data[id] = $(id).value;
-    saveDayData(selectedDate, data);
-  });
-});
-
-// 选中日期时，加载该天的提醒字段
-function loadReminders() {
+// ========== 灵感速记 ==========
+function renderNotes() {
   const data = getDayData(selectedDate);
-  $('core').value = data.core||'';
-  $('exp').value = data.exp||'';
-  $('sport').value = data.sport||'';
+  $('notesList').innerHTML = data.notes.map((n,i) =>
+    `<li>
+      <div class="note-time">${n.time}</div>
+      <div>${escapeHtml(n.text)}</div>
+      <button class="del-note" onclick="delNote(${i})">×</button>
+    </li>`
+  ).join('');
 }
 
-// 重写 selectDate 和 renderEditor 以包含提醒加载
-const _selectDate = selectDate;
-selectDate = function(key) {
-  selectedDate = key;
-  renderCalendar();
-  renderEditor();
-  loadReminders();
-};
+function addNote() {
+  const input = $('noteInput');
+  if(!input.value.trim()) return;
+  const data = getDayData(selectedDate);
+  const now = new Date();
+  const timeStr = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+  data.notes.push({ text: input.value.trim(), time: timeStr });
+  saveDayData(selectedDate, data);
+  input.value = '';
+  renderNotes();
+}
+
+$('noteInput').addEventListener('keydown', e => {
+  if(e.key==='Enter' && !e.shiftKey) { e.preventDefault(); addNote(); }
+});
+
+function delNote(i) {
+  const data = getDayData(selectedDate);
+  data.notes.splice(i,1);
+  saveDayData(selectedDate, data);
+  renderNotes();
+}
+
+// ========== 所有字段自动保存 ==========
+const allFieldIds = ['core','exp','sport','reading','questions','tomorrow','review1','review2','review3'];
+allFieldIds.forEach(id => {
+  const el = $(id);
+  if(el) {
+    el.addEventListener('input', () => {
+      const data = getDayData(selectedDate);
+      data[id] = el.value;
+      saveDayData(selectedDate, data);
+    });
+  }
+});
+
+function loadAllFields() {
+  const data = getDayData(selectedDate);
+  allFieldIds.forEach(id => {
+    const el = $(id);
+    if(el) el.value = data[id] || '';
+  });
+}
 
 // ========== 天气 ==========
 const weatherGradients = {
@@ -382,10 +525,17 @@ function exportWeek() {
   let text = `📊 本周记录（${dateKey(start)} ~ ${dateKey(end)}）\n\n`;
   for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)) {
     const k = dateKey(d); const data = getDayData(k);
-    if(data.todos.length || data.core) text += `【${k}】\n${data.todos.map(t=>`· ${t.text}`).join('\n')}\n${data.core||''}\n\n`;
+    if(data.todos.length || data.core || data.notes.length) {
+      text += `【${k}】\n`;
+      if(data.todos.length) text += data.todos.map(t=>`  · ${t.text}`).join('\n') + '\n';
+      if(data.core) text += `  📌 ${data.core}\n`;
+      if(data.notes.length) text += `  💡 ${data.notes.map(n=>n.text).join(' | ')}\n`;
+      text += '\n';
+    }
   }
-  downloadText(text, 'week-export.txt');
+  downloadText(text, `本周记录_${dateKey(new Date())}.txt`);
 }
+
 function exportMonth() {
   const y = currentDate.getFullYear(), m = currentDate.getMonth();
   const days = new Date(y,m+1,0).getDate();
@@ -393,21 +543,37 @@ function exportMonth() {
   for(let d=1; d<=days; d++) {
     const k = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const data = getDayData(k);
-    if(data.todos.length || data.core) text += `【${k}】${data.todos.map(t=>t.text).join(', ')}\n`;
+    if(data.todos.length || data.core) {
+      text += `【${k}】\n`;
+      if(data.todos.length) text += data.todos.map(t=>t.text).join(', ') + '\n';
+      if(data.core) text += `核心：${data.core}\n`;
+      text += '\n';
+    }
   }
-  downloadText(text, 'month-export.txt');
+  downloadText(text, `${y}年${m+1}月记录.txt`);
 }
+
 function downloadText(text, filename) {
+  const blob = new Blob(['\uFEFF' + text], { type: 'text/plain;charset=utf-8;' });
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([text],{type:'text/plain'}));
+  a.href = URL.createObjectURL(blob);
   a.download = filename; a.click();
+}
+
+// ========== 清空数据 ==========
+function clearAllData() {
+  if(confirm('确定清空所有数据？此操作不可恢复！')) {
+    Object.keys(localStorage).filter(k => k.startsWith('dr_')).forEach(k => localStorage.removeItem(k));
+    renderCalendar(); renderEditor(); renderNotes(); loadAllFields();
+    $('syncStatus').textContent = '已清空所有数据';
+  }
 }
 
 // ========== 初始化 ==========
 renderCalendar();
 renderEditor();
-loadReminders();
+renderNotes();
+loadAllFields();
 </script>
-<script src="/daily-reminder/sync-config.js"></script>
 </body>
 </html>
